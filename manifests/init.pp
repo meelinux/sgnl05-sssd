@@ -197,25 +197,38 @@ class sssd (
     content => template($config_template),
   }
 
-  case $::osfamily {
-    'RedHat': {
-      if ($::facts['os']['name'] == 'Fedora' and versioncmp($::facts['os']['release']['major'], '28') >= 0) or
-      ( $::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '8') >= 0) {
-        if $ensure == 'present' {
-          $authselect_options = join(
-            concat(
-              [$authselect_profile],
-              $mkhomedir ? {
-                true  => $enable_mkhomedir_flags,
-                false => $disable_mkhomedir_flags,
-              }
-            ),
-            ' ',
-          )
-        } else {
-          $authselect_options = join(concat([$authselect_profile],$ensure_absent_flags), ' ')
-        }
-        $authselect_exec = '/bin/authselect'
+    case $::osfamily {
+      'RedHat': {
+        if ($::facts['os']['name'] == 'Fedora' and versioncmp($::facts['os']['release']['major'], '28') >= 0) or
+        ($::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '9') >= 0) {
+          if $ensure == 'present' {
+            $authselect_options = "${authselect_profile} with-mkhomedir"
+          } else {
+            $authselect_options = join(concat([$authselect_profile], $ensure_absent_flags), ' ')
+          }
+          $authselect_exec = '/bin/authselect'
+
+          exec { 'authselect-mkhomedir':
+            command => "${authselect_exec} select ${authselect_options} --force",
+            unless  => "/usr/bin/test \"`${authselect_exec} current --raw`\" = \"${authselect_options}\"",
+            require => File['sssd.conf'],
+          }
+        } elsif ($::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '8') >= 0) {
+          if $ensure == 'present' {
+            $authselect_options = join(
+              concat(
+                [$authselect_profile],
+                $mkhomedir ? {
+                  true  => $enable_mkhomedir_flags,
+                  false => $disable_mkhomedir_flags,
+                }
+              ),
+              ' ',
+            )
+          } else {
+            $authselect_options = join(concat([$authselect_profile], $ensure_absent_flags), ' ')
+          }
+          $authselect_exec = '/bin/authselect'
 
         # The --force option is required in the event that the
         # previous configuration contained in /etc/pam.d was not
