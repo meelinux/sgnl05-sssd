@@ -130,6 +130,7 @@ currently Puppet versions 5 and 6.
 * EL 6
 * EL 7
 * EL 8
+* EL 9
 * Fedora 30
 * Fedora 31
 * Fedora 32
@@ -141,6 +142,8 @@ currently Puppet versions 5 and 6.
 * Ubuntu 14.04
 * Ubuntu 16.04
 * Ubuntu 18.04
+* Ubuntu 20.04
+* Ubuntu 22.04
 
 ### May work with
 

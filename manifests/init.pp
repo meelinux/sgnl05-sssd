@@ -90,37 +90,9 @@ class sssd (
   String $authselect_profile='sssd',
 ) {
 
-  # Warn on unsupported platforms
-  if ($::facts['os']['family'] == 'RedHat') {
-    if ($::facts['os']['name'] == 'Amazon') {
-      if !($::facts['os']['release']['major'] in ['2']) {
-        warning("osname Amazon's os.release.major is <${::facts['os']['release']['major']}> and must be 2.")
-      }
-    } elsif ($::facts['os']['name'] in ['RedHat', 'CentOS']) {
-      if !($::facts['os']['release']['major'] in ['6', '7', '8']) {
-        warning("osname RedHat's os.release.major is <${::facts['os']['release']['major']}> and must be 6, 7 or 8.")
-      }
-    } elsif ($::facts['os']['name'] == 'Fedora') {
-      if !($::facts['os']['release']['major'] in ['30', '31', '32', '33']) {
-        warning("osname Fedora's os.release.major is <${::facts['os']['release']['major']}> and must be 29, 30, 31, 32 or 33.")
-      }
-    } else {
-      warning("osname, \"${::facts['os']['name']}\", is recongnized as part of the RedHat family but is unsupported")
-    }
-  }
 
-  if $::facts['os']['family'] == 'Suse' {
-    if !($::facts['os']['release']['major'] in ['11', '12', '15']) {
-      warning("osfamily Suse's os.release.major is <${::facts['os']['release']['major']}> and must be 11, 12 or 15.")
-    }
-    if ($::facts['os']['release']['major'] == '11') and !($::facts['os']['release']['minor'] in ['3', '4']) {
-      warning("Suse 11's os.release.minor is <${::facts['os']['release']['minor']}> and must be 3 or 4.")
-    }
-  }
-
-  if ($::facts['os']['family'] == 'Debian') and !($::facts['os']['release']['major'] in ['8', '9', '14.04', '16.04', '18.04']) {
-    warning("osfamily Debian's os.release.major is <${::facts['os']['release']['major']}> and must be 8 or 9 for Debian and 14.04, 16.04 or 18.04 for Ubuntu.")
-  }
+  # This previously warned on unsupported platforms, but we'll just leave that
+  # to users having to look at the dependencies in `metadata.json`.
 
   # Manually set service provider to systemd on Amazon Linux 2
   # which is based off el7 and includes systemd.
