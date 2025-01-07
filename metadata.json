@@ -4,9 +4,9 @@
   "author": "meelinux",
   "summary": "Install and configure SSSD",
   "license": "GPL-3.0+",
-  "source": "git://github.com/sgnl05/sgnl05-sssd.git",
+  "source": "git://github.com/meelinux/sgnl05-sssd.git",
   "project_page": "https://github.com/meelinux/sgnl05-sssd",
-  "issues_url": "https://github.com/sgnl05/sgnl05-sssd/issues",
+  "issues_url": "https://github.com/meelinux/sgnl05-sssd/issues",
   "tags": ["sssd", "authentication", "ldap", "active-directory", "ad", "freeipa", "ipa", "idm"],
   "operatingsystem_support": [
     {
