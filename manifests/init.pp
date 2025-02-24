@@ -171,32 +171,43 @@ class sssd (
 
   case $::osfamily {
     'RedHat': {
-      if ($::facts['os']['name'] == 'Fedora' and versioncmp($::facts['os']['release']['major'], '28') >= 0) or
-      ( $::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '8') >= 0) {
-        if $ensure == 'present' {
-          $authselect_options = join(
-            concat(
-              [$authselect_profile],
-              $mkhomedir ? {
-                true  => $enable_mkhomedir_flags,
-                false => $disable_mkhomedir_flags,
-              }
-            ),
-            ' ',
-          )
+      if (($::facts['os']['name'] == 'Fedora' and versioncmp($::facts['os']['release']['major'], '28') >= 0) or
+         ($::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '9') >= 0)) {
+        if $::facts['os']['release']['major'] == '9' {
+          # For RHEL9, select the profile without mkhomedir flag
+          $authselect_options = $authselect_profile
         } else {
-          $authselect_options = join(concat([$authselect_profile],$ensure_absent_flags), ' ')
+          # For Fedora and RHEL < 9: old logic with the flag
+          if $ensure == 'present' {
+            $authselect_options = join(
+              concat(
+                [$authselect_profile],
+                $mkhomedir ? {
+                  true  => $enable_mkhomedir_flags,
+                  false => $disable_mkhomedir_flags,
+                }
+              ),
+              ' ',
+            )
+          } else {
+            $authselect_options = join(concat([$authselect_profile], $ensure_absent_flags), ' ')
+          }
         }
         $authselect_exec = '/bin/authselect'
-
-        # The --force option is required in the event that the
-        # previous configuration contained in /etc/pam.d was not
-        # created by authselect. This condition is true on fresh
-        # installations.
-        exec { 'authselect-mkhomedir':
+  
+        exec { 'authselect-select':
           command => "${authselect_exec} select ${authselect_options} --force",
-          unless  => "/usr/bin/test \"`${authselect_exec} current --raw`\" = \"${authselect_options}\"",
+          unless  => "/usr/bin/test \"`${authselect_exec} current --raw`\" = \"${authselect_options} with-mkhomedir\"",
           require => File['sssd.conf'],
+        }
+  
+        # Activate mkhomedir for RHEL9 if requested
+        if $::facts['os']['release']['major'] == '9' and $mkhomedir and $ensure == 'present' {
+          exec { 'authselect-enable-mkhomedir':
+            command => "${authselect_exec} enable-feature with-mkhomedir",
+            unless  => "/usr/bin/test \"`${authselect_exec} current --raw`\" = \"${authselect_options} with-mkhomedir\"",
+            require => Exec['authselect-select'],
+          }
         }
       } else {
         if $ensure == 'present' {
@@ -204,15 +215,14 @@ class sssd (
             true  => join($enable_mkhomedir_flags, ' '),
             false => join($disable_mkhomedir_flags, ' '),
           }
-        }
-        else {
+        } else {
           $authconfig_flags = join($ensure_absent_flags, ' ')
         }
-
+  
         $authconfig_update_cmd = "/usr/sbin/authconfig ${authconfig_flags} --update"
         $authconfig_test_cmd   = "/usr/sbin/authconfig ${authconfig_flags} --test"
         $authconfig_check_cmd  = "/usr/bin/test \"`${authconfig_test_cmd}`\" = \"`/usr/sbin/authconfig --test`\""
-
+  
         exec { 'authconfig-mkhomedir':
           command => $authconfig_update_cmd,
           unless  => $authconfig_check_cmd,
