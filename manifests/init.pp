@@ -170,73 +170,7 @@ class sssd (
   }
   case $::osfamily {
     'RedHat': {
-      # Check if system uses authselect (Fedora 28+, RHEL 8+)
-      if (($::facts['os']['name'] == 'Fedora' and versioncmp($::facts['os']['release']['major'], '28') >= 0) or
-         ($::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '8') >= 0)) {
-        
-        $authselect_exec = '/bin/authselect'
-  
-        # RHEL 9 specific handling
-        if ($::facts['os']['family'] == 'RedHat' and versioncmp($::facts['os']['release']['major'], '9') >= 0) {
-          exec { 'authselect-select':
-            command => "${authselect_exec} select ${authselect_profile} --force",
-            unless  => "${authselect_exec} current --raw | grep -q '^${authselect_profile} with-mkhomedir$'",
-            require => File['sssd.conf'],
-          }
-  
-          if $mkhomedir and $ensure == 'present' {
-            exec { 'authselect-enable-mkhomedir':
-              command => "${authselect_exec} enable-feature with-mkhomedir",
-              unless  => "${authselect_exec} current --raw | grep -q 'with-mkhomedir$'",
-              require => Exec['authselect-select'],
-            }
-          }
-        }
-        # RHEL 8 and Fedora handling
-        else {
-          if $ensure == 'present' {
-            $authselect_options = join(
-              concat(
-                [$authselect_profile],
-                $mkhomedir ? {
-                  true  => $enable_mkhomedir_flags,
-                  false => $disable_mkhomedir_flags,
-                }
-              ),
-              ' '
-            )
-          } else {
-            $authselect_options = $authselect_profile
-          }
-  
-          exec { 'authselect-select':
-            command => "${authselect_exec} select ${authselect_options} --force",
-            unless  => "${authselect_exec} current --raw | grep -q '^${authselect_options}$'",
-            require => File['sssd.conf'],
-          }
-        }
-      }
-      # Systems using authconfig (RHEL 7 and earlier)
-      else {
-        if $ensure == 'present' {
-          $authconfig_flags = $mkhomedir ? {
-            true  => join($enable_mkhomedir_flags, ' '),
-            false => join($disable_mkhomedir_flags, ' '),
-          }
-        } else {
-          $authconfig_flags = join($ensure_absent_flags, ' ')
-        }
-  
-        $authconfig_update_cmd = "/usr/sbin/authconfig ${authconfig_flags} --update"
-        $authconfig_test_cmd   = "/usr/sbin/authconfig ${authconfig_flags} --test"
-        $authconfig_check_cmd  = "/usr/bin/test \"`${authconfig_test_cmd}`\" = \"`/usr/sbin/authconfig --test`\""
-  
-        exec { 'authconfig-mkhomedir':
-          command => $authconfig_update_cmd,
-          unless  => $authconfig_check_cmd,
-          require => File['sssd.conf'],
-        }
-      }
+        include sssd::rhel
     }
     'Debian': {
       if $mkhomedir {
