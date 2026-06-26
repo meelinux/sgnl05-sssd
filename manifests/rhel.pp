@@ -3,6 +3,7 @@ class sssd::rhel () inherits sssd {
     # Variables for the execution of authselect and authconfig
     $authselect_exec = '/bin/authselect'
     $authconfig_exec = '/usr/sbin/authconfig'
+    $auth_flag_file = 'false'
 
     case $facts['os']['release']['major'] {
         '9': {
