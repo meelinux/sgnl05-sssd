@@ -3,8 +3,9 @@ class sssd::rhel () inherits sssd {
     # Variables for the execution of authselect and authconfig
     $authselect_exec = '/bin/authselect'
     $authconfig_exec = '/usr/sbin/authconfig'
+    $auth_flag_file = 'false'
 
-    case $::facts['os']['release']['major'] {
+    case $facts['os']['release']['major'] {
         '9': {
             # In rhel9 no parameters are required for the select command, only the option "sssd" must be specified
             $auth_select_cmd = "${authselect_exec} select ${authselect_profile} --force"

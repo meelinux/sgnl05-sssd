@@ -52,11 +52,11 @@ class sssd (
   Enum['present', 'absent'] $ensure = 'present',
   Hash $config = {
     'sssd'               => {
-      'domains'             => $::domain,
+      'domains'             => $trusted['domain'],
       'config_file_version' => 2,
       'services'            => ['nss', 'pam'],
     },
-    "domain/${::domain}" => {
+    "domain/${trusted['domain']}" => {
       'access_provider'    => 'simple',
       'simple_allow_users' => ['root'],
     },
@@ -97,7 +97,7 @@ class sssd (
   # Manually set service provider to systemd on Amazon Linux 2
   # which is based off el7 and includes systemd.
   # See issue PUP-8248 - https://tickets.puppetlabs.com/browse/PUP-8248
-  if ($::facts['os']['name'] == 'Amazon') and ($::facts['os']['release']['major'] == '2') {
+  if ($facts['os']['name'] == 'Amazon') and ($facts['os']['release']['major'] == '2') {
     $service_provider = 'systemd'
   } else {
     $service_provider = undef
@@ -168,7 +168,7 @@ class sssd (
     mode    => '0600',
     content => template($config_template),
   }
-  case $::osfamily {
+  case $facts['os']['family'] {
     'RedHat': {
         include sssd::rhel
     }
